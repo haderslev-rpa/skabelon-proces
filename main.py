@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from behandel import behandel_page
 
 from pprint import pprint #Fjernes efter brug hjælper med printing af data i et læsbart format
 
@@ -117,37 +118,28 @@ async def process_workqueue(workqueue: Workqueue):
             data = item.data  # dict (deserialiseret JSON)
 
             try:
-                #Overveje her, at lave et print af item id, så man i loggen tydeligt kan se hvilket item der behandles, 
-                # og dermed lettere kan debugge i forhold til det specifikke item i ATS UI'et.
-                # Dog lidt for vondsomt, at hele item.data printes for hvert item, da det kan være meget data og dermed gøre loggen uoverskuelig.
 
-                #print("\n========== DEBUG START ==========")
-                #print("ORIGINAL item.data:")
-                #pprint(item.data)
-                logger.info("Her er en item data log")
+                print("==================================== NEXT ITEM ==================================== ")
+                pprint(item.data)
 
-                # --- din eksisterende logik ---
+                # --- Indsæt din proceskode her --- eller brug behandel_page
+                behandel_page() #Filen behandl.py
+
+
+
+                #update_item_data er din egen funktion som du kan bruge til at opdatere item data og logge samtidig. Den er typisk nyttig i process
                 update_item_data(
                     data,
                     status_updates={
                         "status": "Manuel",
-                        "status_kode": "BORGER_UDENFOR_SCOPE"
+                        "status_kode": "BORGER_UDENFOR_SCOPE" 
                     },
-                    #log_entry={
-                    #    "step": "3.0 Trin 3",
-                    #    "result": "Manuel",
-                    #    "note": "Borger udenfor målgruppen"
-                    #}
                 )
-               
-                
-                from behandel import kør
-                print("starter i main")
-                kør()
-                print("Tilbage i main")
+
                 # Hvis alt er OK, så bruges status fra item data. Hvis intet i item data så bliver message blot "Completed"
 
                 item.update(data) #update data.
+                
 
                 # status ligger i data["status"],
                 status_dict = data.get("status", {})
