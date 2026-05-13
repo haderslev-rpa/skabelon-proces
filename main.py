@@ -72,7 +72,7 @@ async def populate_queue(workqueue: Workqueue):
         # Her bliver flad input-data konverteret til korrekt item-struktur
         update_item_data(
             data_json,
-            data_updates=raw_item,
+            box_updates=raw_item,
             log_entry={
                 "message": "Item standardiseret",
                 "level": "INFO"
@@ -85,7 +85,7 @@ async def populate_queue(workqueue: Workqueue):
         # -------------------------------------------------------------------
         workqueue.add_item(
             data=data_json,
-            reference=data_json["data"]["cpr"]
+            reference=data_json["box"]["cpr"]
         )
 
     logger.info(f"{len(raw_items)} items tilføjet til workqueue")
