@@ -6,16 +6,7 @@ from behandel import behandel_page
 from pprint import pprint #Fjernes efter brug hjælper med printing af data i et læsbart format
 
 # Automation Server klienten
-from automation_server_client import (
-    AutomationServer,
-    Workqueue,
-    WorkItemError,
-    WorkItemStatus
-)
-
-# DIN EGEN FUNKTION TIL STANDARDISERING AF DATA
-# Denne bruges typisk i QUEUE-MODE (producer)
-
+from automation_server_client import (AutomationServer, Workqueue, WorkItemError, WorkItemStatus)
 from q_haderslev_vbo.automation_server.ats_update_item_data import update_item_data
 
 # ---------------------------------------------------------------------------
@@ -64,7 +55,7 @@ async def populate_queue(workqueue: Workqueue):
     ]
 
     # -----------------------------------------------------------------------
-    # Her standardiserer vi data vha. din egen funktion
+    # Her standardiserer vi data
     # -----------------------------------------------------------------------
     for raw_item in raw_items:
         data_json = {}
@@ -120,23 +111,19 @@ async def process_workqueue(workqueue: Workqueue):
                 pprint(item.data)
 
                 # --- Indsæt din proceskode her --- eller brug behandel_page
-                behandel_page() #Filen behandl.py
+                behandel_page(item) #Filen behandl.py
 
 
 
-                #update_item_data er din egen funktion som du kan bruge til at opdatere item data og logge samtidig. Den er typisk nyttig i process
+                #update_item_data er funktion som du kan bruge til at opdatere item data. Den er typisk nyttig i process og bruges ofte på behandel page
                 update_item_data(
                     data,
+                    item=item
                     status_updates={
                         "status": "Manuel",
                         "status_kode": "BORGER_UDENFOR_SCOPE" 
                     },
-                )
-
-                # Hvis alt er OK, så bruges status fra item data. Hvis intet i item data så bliver message blot "Completed"
-
-                item.update(data) #update data.
-                
+                )            
 
                 # status ligger i data["status"],
                 status_dict = data.get("status", {})
