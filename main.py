@@ -73,10 +73,7 @@ async def populate_queue(workqueue: Workqueue):
         update_item_data(
             data_json,
             box_updates=raw_item,
-            log_entry={
-                "message": "Item standardiseret",
-                "level": "INFO"
-            }
+            update=False
         )
 
         # -------------------------------------------------------------------
