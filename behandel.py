@@ -35,8 +35,9 @@ def behandel_page(item):
     # ==========================================================
     step = "SEND_BREV"
     # ==========================================================
+    state = getattr(States, step)
 
-    if mangler_state(States.SEND_BREV):
+    if mangler_state(state):
 
         log_step(step, "Start")
 
@@ -45,14 +46,15 @@ def behandel_page(item):
 
         update_item_data(data, item=item)
 
-        set_state(States.SEND_BREV)
+        set_state(state)
 
 
     # ==========================================================
     step = "JOURNALISER_BREV"
     # ==========================================================
+    state = getattr(States, step)
 
-    if mangler_state(States.JOURNALISER_BREV):
+    if mangler_state(state):
 
         log_step(step, "Start")
 
@@ -61,14 +63,15 @@ def behandel_page(item):
 
         update_item_data(data, item=item)
 
-        set_state(States.JOURNALISER_BREV)
+        set_state(state)
 
 
     # ==========================================================
-        step = "AFSLUT_SAG"
+    step = "AFSLUT_SAG"
     # ==========================================================
+    state = getattr(States, step)
 
-    if mangler_state(States.AFSLUT_SAG):
+    if mangler_state(state):
 
         log_step(step, "Start")
 
@@ -77,4 +80,4 @@ def behandel_page(item):
 
         update_item_data(data, item=item)
 
-        set_state(States.AFSLUT_SAG)
+        set_state(state)
