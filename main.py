@@ -48,7 +48,7 @@ async def populate_queue(workqueue: Workqueue, debug: bool):
     logger = logging.getLogger(__name__)
     logger.info("Populate queue mode started")
 
-    # ❗ Ingen Playwright her (standard Automation Server)
+    # ❗ Ingen Playwright her (standard Automation Server, men kan tilføjes)
     raw_items = [
         {"cpr": "1234567891", "type": "adresseopslag"},
         {"cpr": "1111111111", "type": "fødselsdato"},
@@ -84,11 +84,9 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
     #
     # ✅ KAN SLETTES i processer uden browser
     # =========================================================
-    session = BrowserSession(
-        headless=True,
-        debug=debug
-    )
+    session = BrowserSession(headless=True,debug=debug)
     await session.start()
+    page = await session.new_page()  # Page (browser-fane)
 
     try: # denne try bruges kun til PLAYWRIGHT processer
         # Workqueue er iterable → hvert item behandles ét ad gangen
@@ -105,7 +103,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     # ▶ PROCESS-KODE
                     # (behandel_page bruger Playwright internt)
                     # --------------------------------------------------
-                    await behandel_page(item, session)
+                    await behandel_page(item, session, page) #Fjern session og page hvis du ikke bruger Playwright i din process
 
                     update_item_data(
                         data,
@@ -123,20 +121,13 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     # =================================================
                     # ✅ SOFT ERROR
                     # - Item fejler
-                    # - Browser lukkes (ren state) #Bruges til playwright
-                    # - Processen fortsætter 
                     # =================================================
                     logger.error(f"WorkItemError for item {item.reference}: {e}")
                     item.fail(str(e))
                     
-                    # Luk browser for sikkerhed (ny session på næste item) Kan fjernes hvis man ikke bruger playwright.
-                    await session.close()
-
-                    # Opret ny browser-session
-                    session = BrowserSession(
-                        headless=True,
-                        debug=debug
-                    )
+                    # Playwright:
+                    # Luk browser for sikkerhed (ny session på næste item)
+                    session = BrowserSession(headless=True,debug=debug)
                     await session.start()
 
                 except Exception:
@@ -148,7 +139,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     # =================================================
                     logger.exception("Uventet fejl")
 
-                    try:
+                    try: #Playwright:
                         if session.context and session.context.pages:
                             page = session.context.pages[-1]
                             await session.recorder.screenshot(
@@ -159,13 +150,13 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     except Exception:
                         logger.warning("Kunne ikke tage screenshot ved hard error")
 
-                    # Luk ALT
+                    # Luk ALT (Playwright)
                     await session.close()
 
                     # Stop hele processen (Automation Server genstarter)
                     raise
 
-    finally: # denne try bruges kun til PLAYWRIGHT processer og kan slettes.
+    finally: # PLAYWRIGHT:
         # =====================================================
         # 🧹 SIKKER OPRYDNING
         #

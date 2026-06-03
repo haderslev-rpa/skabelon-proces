@@ -1,4 +1,4 @@
-def behandel_page(item):
+def behandel_page(item, session, page):
 
     from q_haderslev_vbo.automation_server.ats_update_item_data import update_item_data
     from q_haderslev_vbo.automation_server.ats_find_state import find_state
@@ -8,18 +8,22 @@ def behandel_page(item):
     data = item.data
 
     """
-    Hvis der er playwright, så skal denne try være omkring hele behandel.py siden.
-    session = BrowserSession(headless=True, debug=False)
-    await session.start()
-    
-    try:
-        # normal proces
-        ...
-    except Exception:
-        await session.recorder.screenshot(page, "exception", always=True)
-        raise
-    finally:
-        await session.close()
+    PLAYWRIGHT – NY STANDARD (VIGTIGT):
+
+    - BrowserSession (objekt – browser-livscyklus) oprettes i main.py
+    - session gives IND i behandel_page som parameter
+    - behandel_page må:
+        ✅ bruge page.goto() (funktion – navigér)
+        ✅ tage screenshots via await session.recorder.screenshot(page,"cura_efter_login",always=True)
+        ✅ tage optage video via await session.recorder.start_recording(page, 10)
+    - behandel_page må IKKE:
+        ❌ oprette BrowserSession
+        ❌ lukke session eller browser 
+        ❌ bruge session.new_page() (funktion – ny fane) (kan godt være undtagelser)
+        ❌ have try/except/finally for Playwright
+
+    Exception-håndtering, screenshots ved fejl og session.close()
+    håndteres ALTID i main.py.
     """
 
     # ==========================================================
