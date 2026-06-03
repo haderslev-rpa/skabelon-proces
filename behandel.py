@@ -7,6 +7,21 @@ def behandel_page(item):
 
     data = item.data
 
+    """
+    Hvis der er playwright, så skal denne try være omkring hele behandel.py siden.
+    session = BrowserSession(headless=True, debug=False)
+    await session.start()
+    
+    try:
+        # normal proces
+        ...
+    except Exception:
+        await session.recorder.screenshot(page, "exception", always=True)
+        raise
+    finally:
+        await session.close()
+    """
+
     # ==========================================================
     # 🧠 STATES
     # ==========================================================
