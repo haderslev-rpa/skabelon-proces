@@ -1,76 +1,69 @@
 import asyncio
 import logging
 import sys
-from behandel import behandel_page
+from pprint import pprint  # helper (pæn print)
 
-from pprint import pprint #Fjernes efter brug hjælper med printing af data i et læsbart format
+# ------------------------------------------------------------
+# 🧠 PROCESS-KODE (ÉT ITEM)
+# ------------------------------------------------------------
+from behandel import behandel_page  # funktion (genbrugelig kodeblok)
 
-# Automation Server klienten
-from automation_server_client import (AutomationServer, Workqueue, WorkItemError, WorkItemStatus)
-from q_haderslev_vbo.automation_server.ats_update_item_data import update_item_data
+# ------------------------------------------------------------
+# 🧠 AUTOMATION SERVER
+# ------------------------------------------------------------
+from automation_server_client import (
+    AutomationServer,
+    Workqueue,
+    WorkItemError,
+    WorkItemStatus
+)
 
-# ---------------------------------------------------------------------------
-# LOGGING
-# Skabelonerne forventer, at logging er sat op tidligt
-# ---------------------------------------------------------------------------
+from q_haderslev_vbo.automation_server.ats_update_item_data import (
+    update_item_data
+)
+
+# ------------------------------------------------------------
+# 🌐 PLAYWRIGHT (KAN SLETTES I PROCESSER UDEN BROWSER)
+# ------------------------------------------------------------
+from q_haderslev_vbo.playwright.browser_session import BrowserSession
+
+
+# ------------------------------------------------------------
+# LOGGING (STANDARD)
+# ------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
+
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("automation_server_client").setLevel(logging.WARNING)
 logging.getLogger("debugpy").setLevel(logging.WARNING)
 
 
-
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
 # QUEUE-MODE (PRODUCER)
-#
-# Denne funktion køres KUN når scriptet startes med --queue
-# Den må:
-#   ✅ oprette testdata
-#   ✅ kalde update_item_data
-#   ✅ tilføje items til køen
-# Den må IKKE:
-#   ❌ behandle items
-#   ❌ complete/fail items
-# ---------------------------------------------------------------------------
-async def populate_queue(workqueue: Workqueue):
+# ------------------------------------------------------------
+async def populate_queue(workqueue: Workqueue, debug: bool):
     logger = logging.getLogger(__name__)
     logger.info("Populate queue mode started")
 
-    # -----------------------------------------------------------------------
-    # EKSEMPEL: FIKTIVE TESTDATA (det er her dine test-items hører til)
-    # Disse data kan komme fra:
-    #   - Excel
-    #   - CSV
-    #   - API
-    #   - Test-hardcodet data (som her)
-    # -----------------------------------------------------------------------
+    # ❗ Ingen Playwright her (standard Automation Server)
     raw_items = [
-        {"cpr": "1234567891", "type": "adresseopslag", "note": "Test-item 1"},
-        {"cpr": "1111111111", "type": "fødselsdato-check", "note": "Test-item 2"},
-        {"cpr": "2222222222", "type": "myndighedsopslag", "note": "Test-item 3"},
-        {"cpr": "3333333333", "type": "journalopslag", "note": "Test-item 4"},
+        {"cpr": "1234567891", "type": "adresseopslag"},
+        {"cpr": "1111111111", "type": "fødselsdato"},
+        {"cpr": "2222222222", "type": "myndighed"},
     ]
 
-    # -----------------------------------------------------------------------
-    # Her standardiserer vi data
-    # -----------------------------------------------------------------------
     for raw_item in raw_items:
         data_json = {}
 
-        # Her bliver flad input-data konverteret til korrekt item-struktur
         update_item_data(
             data_json,
             box_updates=raw_item,
             update=False
         )
 
-        # -------------------------------------------------------------------
-        # Tilføj item til queue
-        # reference bruges typisk til sporbarhed (fx CPR, sagsnr osv.) ret derfor nedenstående "cpr" til det der skal vises i ATS UI'et
-        # -------------------------------------------------------------------
         workqueue.add_item(
             data=data_json,
             reference=data_json["box"]["cpr"]
@@ -79,90 +72,124 @@ async def populate_queue(workqueue: Workqueue):
     logger.info(f"{len(raw_items)} items tilføjet til workqueue")
 
 
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
 # PROCESS-MODE (WORKER)
-#
-# Denne funktion køres når scriptet startes UDEN --queue
-# Den må:
-#   ✅ læse items fra køen
-#   ✅ behandle data
-#   ✅ complete/fail items
-# Den må IKKE:
-#   ❌ oprette testdata
-#   ❌ tilføje items til køen
-# ---------------------------------------------------------------------------
-async def process_workqueue(workqueue: Workqueue):
+# ------------------------------------------------------------
+async def process_workqueue(workqueue: Workqueue, debug: bool):
     logger = logging.getLogger(__name__)
-    logger.info("Process workqueue mode started")
+    logger.info(f"Process workqueue mode started (debug={debug})")
 
-    # Workqueue er iterable → hvert item tages ét ad gangen
-    for item in workqueue:
+    # =========================================================
+    # 🌐 PLAYWRIGHT – ÉN BROWSERSESSION FOR HELE PROCESSEN
+    #
+    # ✅ KAN SLETTES i processer uden browser
+    # =========================================================
+    session = BrowserSession(
+        headless=True,
+        debug=debug
+    )
+    await session.start()
 
-        # with item:
-        #   - låser item
-        #   - hvis der ikke kaldes complete/fail → rollbackes item
- 
-        with item:
-            data = item.data  # dict (deserialiseret JSON)
+    try: # denne try bruges kun til PLAYWRIGHT processer
+        # Workqueue er iterable → hvert item behandles ét ad gangen
+        for item in workqueue:
 
-            try:
+            with item:
+                data = item.data
 
-                print("==================================== NEXT ITEM ==================================== ")
-                pprint(item.data)
+                try:
+                    print("==================================== NEXT ITEM ====================================")
+                    pprint(data)
 
-                # --- Indsæt din proceskode her --- eller brug behandel_page
-                behandel_page(item) #Filen behandl.py
+                    # --------------------------------------------------
+                    # ▶ PROCESS-KODE
+                    # (behandel_page bruger Playwright internt)
+                    # --------------------------------------------------
+                    await behandel_page(item, session)
+
+                    update_item_data(
+                        data,
+                        item=item,
+                        status_updates={
+                            "status": "Completed",
+                            "status_kode": "OK"
+                        }
+                    )
+
+                    item.update(data)
+                    item.complete("Completed")
+
+                except WorkItemError as e:
+                    # =================================================
+                    # ✅ SOFT ERROR
+                    # - Item fejler
+                    # - Browser lukkes (ren state) #Bruges til playwright
+                    # - Processen fortsætter 
+                    # =================================================
+                    logger.error(f"WorkItemError for item {item.reference}: {e}")
+                    item.fail(str(e))
+                    
+                    # Luk browser for sikkerhed (ny session på næste item) Kan fjernes hvis man ikke bruger playwright.
+                    await session.close()
+
+                    # Opret ny browser-session
+                    session = BrowserSession(
+                        headless=True,
+                        debug=debug
+                    )
+                    await session.start()
+
+                except Exception:
+                    # =================================================
+                    # ❌ HARD ERROR
+                    # - Screenshot tages
+                    # - Browser lukkes
+                    # - Processen STOPPER
+                    # =================================================
+                    logger.exception("Uventet fejl")
+
+                    try:
+                        if session.context and session.context.pages:
+                            page = session.context.pages[-1]
+                            await session.recorder.screenshot(
+                                page,
+                                "hard_exception",
+                                always=True
+                            )
+                    except Exception:
+                        logger.warning("Kunne ikke tage screenshot ved hard error")
+
+                    # Luk ALT
+                    await session.close()
+
+                    # Stop hele processen (Automation Server genstarter)
+                    raise
+
+    finally: # denne try bruges kun til PLAYWRIGHT processer og kan slettes.
+        # =====================================================
+        # 🧹 SIKKER OPRYDNING
+        #
+        # ✅ Lukker browser hvis processen afsluttes normalt
+        # =====================================================
+        await session.close() # denne try bruges kun til PLAYWRIGHT processer og kan slettes
 
 
-
-                #update_item_data er funktion som du kan bruge til at opdatere item data. Den er typisk nyttig i process og bruges ofte på behandel page
-                update_item_data(
-                    data,
-                    item=item
-                    status_updates={
-                        "status": "Manuel",
-                        "status_kode": "BORGER_UDENFOR_SCOPE" 
-                    },
-                )            
-
-                # status ligger i data["status"],
-                status_dict = data.get("status", {})
-
-                if isinstance(status_dict, dict):
-                    message = status_dict.get("status", "Completed")
-                else:
-                    message = "Completed"
-
-                item.complete(message)
-
-
-
-            except WorkItemError as e:
-                # Soft error:
-                logger.error(f"WorkItemError for item {item.reference}: {e}")
-                item.fail(str(e))
-
-            except Exception as e:
-                # Hard error:
-                # Brug evt. raise hvis processen skal stoppe
-                logger.exception("Uventet fejl")
-                raise
-
-
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
 # MAIN ENTRY POINT
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
 if __name__ == "__main__":
-    # Automation Server konfiguration læses fra miljøet:
-    # ATS_URL, ATS_TOKEN, ATS_WORKQUEUE osv.
+
+    # ✅ CLI flags (runtime-parametre)
+    DEBUG = "--debug" in sys.argv   # bool (sand/falsk)
+    QUEUE_MODE = "--queue" in sys.argv
+
     ats = AutomationServer.from_environment()
     workqueue = ats.workqueue()
 
-    # -----------------------------------------------------------------------
+    # --------------------------------------------------------
     # QUEUE-MODE
-    # -----------------------------------------------------------------------
-    if "--queue" in sys.argv:
-
+    # --------------------------------------------------------
+    if QUEUE_MODE:
         # ---------------------------------------------------------------
         # VIGTIGT:
         # Denne linje CLEARSER alle NEW items i køen.
@@ -171,13 +198,12 @@ if __name__ == "__main__":
         #     → så SKAL denne linje fjernes eller kommenteres ud.
         #
         # workqueue.clear_workqueue(WorkItemStatus.NEW)
-        # ---------------------------------------------------------------
+        
         workqueue.clear_workqueue(WorkItemStatus.NEW)
-
-        asyncio.run(populate_queue(workqueue))
+        asyncio.run(populate_queue(workqueue, debug=DEBUG))
         sys.exit(0)
 
-    # -----------------------------------------------------------------------
-    # PROCESS-MODE (standard)
-    # -----------------------------------------------------------------------
-    asyncio.run(process_workqueue(workqueue))
+    # --------------------------------------------------------
+    # PROCESS-MODE
+    # --------------------------------------------------------
+    asyncio.run(process_workqueue(workqueue, debug=DEBUG))
