@@ -14,16 +14,14 @@ def behandel_page(item, session, page):
     - session gives IND i behandel_page som parameter
     - behandel_page må:
         ✅ bruge page.goto() (funktion – navigér)
-        ✅ tage screenshots via await session.recorder.screenshot(page,"cura_efter_login",always=True)
-        ✅ tage optage video via await session.recorder.start_recording(page, 10)
+        ✅ tage screenshots via await session.recorder.screenshot(page=page,"cura_efter_login",always=True)
+        ✅ tage optage video via await session.recorder.start_recording(page=page, 10)
     - behandel_page må IKKE:
         ❌ oprette BrowserSession
         ❌ lukke session eller browser 
         ❌ bruge session.new_page() (funktion – ny fane) (kan godt være undtagelser)
         ❌ have try/except/finally for Playwright
-
-    Exception-håndtering, screenshots ved fejl og session.close()
-    håndteres ALTID i main.py.
+        ❌Exception-håndtering, screenshots ved fejl og session.close() åndteres ALTID i main.py.
     """
 
     # ==========================================================
