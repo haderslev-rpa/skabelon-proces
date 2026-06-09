@@ -22,6 +22,43 @@ def behandel_page(item, session, page):
         ❌ bruge session.new_page() (funktion – ny fane) (kan godt være undtagelser)
         ❌ have try/except/finally for Playwright
         ❌Exception-håndtering, screenshots ved fejl og session.close() åndteres ALTID i main.py.
+    
+    SHAREPOINT LIST INTEGRATION
+    from q_haderslev_vbo.automation_server.ats_sharepoint import (
+    hent_sharepoint_list_item_til_box,
+    gem_sharepoint_list_item_til_box
+    )
+
+    # HENT
+    hent_sharepoint_list_item_til_box(
+        site_name="Automatisering",
+        list_name="Test - Rune",
+        list_item_id=item.data["box"]["sharepoint"]["id"],
+        item=item
+    )
+
+    # GEM (UPDATE)
+    gem_sharepoint_list_item_til_box(
+        site_name="Automatisering",
+        list_name="Test - Rune",
+        sharepoint_data={
+            "id": item.data["box"]["sharepoint"]["id"],
+            "Robot kommentar": "Sag afsluttet"
+        },
+        item=item
+)
+    behandel_page(item, session, page):
+    
+    Eksempel på hvordan sharepoint kan bruges
+  1. Læs data = item.data
+  2. Sørg for at box findes
+  3. (Evt.) hent SharePoint ind i box.sharepoint
+  4. Brug box + box.sharepoint til logik
+  5. Når noget ændres:
+       - opdatér box (lokalt)
+       - gem i SharePoint (via gem_..._til_box)
+  6. Opdatér states/status
+  7. Lad ATS gemme item.data
     """
 
     # ==========================================================
