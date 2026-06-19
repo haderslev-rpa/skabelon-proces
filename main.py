@@ -134,7 +134,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     session = BrowserSession(headless=True,debug=debug)
                     await session.start()
 
-                except Exception:
+                except Exception as e:
                     # =================================================
                     # ❌ HARD ERROR
                     # - Screenshot tages
@@ -146,9 +146,9 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     try: #Playwright:
                         if session.context and session.context.pages:
                             page = session.context.pages[-1]
-                            await session.recorder.screenshot(
+                            await session.screenshot(
                                 page,
-                                "hard_exception",
+                                f"hard_exception_{type(e).__name__}",
                                 always=True
                             )
                     except Exception:
