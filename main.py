@@ -110,7 +110,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     await behandel_page(item=item, session=session, page=page) #Fjern session og page hvis du ikke bruger Playwright i din process
 
                     update_item_data(
-                        data=data,
+                        data,
                         item=item,
                         status_updates={
                             "status": "Completed",
