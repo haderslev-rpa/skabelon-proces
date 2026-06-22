@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import os
 from pprint import pprint  # helper (pæn print)
 
 # ------------------------------------------------------------
@@ -88,7 +89,8 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
     #
     # ✅ KAN SLETTES i processer uden browser
     # =========================================================
-    session = BrowserSession(headless=True,debug=debug)
+    headless = os.getenv("HEADLESS", "true").lower() == "true" #Skriv HEADLES=false i .env for at se browseren under kørsel
+    session = BrowserSession(headless=headless,debug=debug)
     await session.start()
     page = await session.new_page()  # Page (browser-fane)
 
