@@ -111,11 +111,11 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
 
                     update_item_data(
                         data,
-                        item=item,
-                        status_updates={
-                            "status": "Completed",
-                            "status_kode": "OK"
-                        }
+                        item=item
+                        status="Completed",
+                        status_code="Færdig",
+                        state="Completed",
+
                     )
 
                     item.update(data)
