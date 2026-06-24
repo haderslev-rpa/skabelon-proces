@@ -73,11 +73,16 @@ def behandel_page(item, session, page):
     # ==========================================================
     # 🔁 HELPERS
     # ==========================================================
-    def har_state(state):
-        return find_state(data, search_text=state)
+    def mangler_state(state, step):
+        states = data.get("state", [])
 
-    def mangler_state(state):
-        return not har_state(state)
+        match = next((s for s in states if state in s), None)
+
+        if match:
+            log_step(step, f'Skip "{match}"')
+            return False
+
+        return True
 
     def set_state(state):
         update_item_data(data, item=item, state=state)
@@ -91,7 +96,7 @@ def behandel_page(item, session, page):
     # ==========================================================
     state = getattr(States, step)
 
-    if mangler_state(state):
+    if mangler_state(state, step):
 
         log_step(step, "Start")
 
@@ -108,7 +113,7 @@ def behandel_page(item, session, page):
     # ==========================================================
     state = getattr(States, step)
 
-    if mangler_state(state):
+    if mangler_state(state, step):
 
         log_step(step, "Start")
 
@@ -125,7 +130,7 @@ def behandel_page(item, session, page):
     # ==========================================================
     state = getattr(States, step)
 
-    if mangler_state(state):
+    if mangler_state(state, step):
 
         log_step(step, "Start")
 
