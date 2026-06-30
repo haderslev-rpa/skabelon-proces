@@ -28,6 +28,9 @@ from q_haderslev_vbo.automation_server.ats_update_item_data import (
 # ------------------------------------------------------------
 from q_haderslev_vbo.playwright.browser_session import BrowserSession
 
+def get_headless_flag():  #Skriv HEADLESS=false i .env for at se browseren under kørsel
+    return os.getenv("HEADLESS", "true").lower() == "true"
+
 
 # ------------------------------------------------------------
 # LOGGING (STANDARD)
@@ -89,7 +92,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
     #
     # ✅ KAN SLETTES i processer uden browser
     # =========================================================
-    headless = os.getenv("HEADLESS", "true").lower() == "true" #Skriv HEADLES=false i .env for at se browseren under kørsel
+    headless = get_headless_flag()
     session = BrowserSession(headless=headless,debug=debug)
     await session.start()
     page = await session.new_page()  # Page (browser-fane)
@@ -133,7 +136,8 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
                     
                     # Playwright:
                     # Luk browser for sikkerhed (ny session på næste item)
-                    session = BrowserSession(headless=True,debug=debug)
+                    headless = get_headless_flag()
+                    session = BrowserSession(headless=headless,debug=debug)
                     await session.start()
 
                 except Exception as e:
