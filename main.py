@@ -116,7 +116,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
 
                     update_item_data(
                         data,
-                        item=item
+                        item=item,
                         status="Completed",
                         status_code="Færdig",
                         state="Completed",
