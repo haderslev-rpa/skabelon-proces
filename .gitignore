@@ -4,3 +4,4 @@ __pycache__/
 .env
 .vscode/
 debug_playwright/
+tests_local*/
