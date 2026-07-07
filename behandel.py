@@ -1,4 +1,4 @@
-def behandel_page(item, session, page):
+async def behandel_page(item, session, page):
 
     from q_haderslev_vbo.automation_server.ats_update_item_data import update_item_data
     from q_haderslev_vbo.automation_server.ats_find_state import find_state
