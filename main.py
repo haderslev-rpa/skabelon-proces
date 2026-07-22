@@ -84,6 +84,9 @@ async def populate_queue(workqueue: Workqueue, debug: bool):
             item_reference=item_reference,
             new=True,
             in_progress=True,
+            completed=True,
+            new=True,
+            pending_user_action=True
         ):
             print(
                 f"Springer over: Item med reference "
