@@ -87,6 +87,9 @@ async def populate_queue(workqueue: Workqueue, debug: bool):
             completed=True,
             new=True,
             pending_user_action=True
+            start_datetime="2025-07-01T00:00:00Z",
+            end_datetime="2026-07-31T23:59:59.999999Z",
+            updated_at=False,
         ):
             print(
                 f"Springer over: Item med reference "
