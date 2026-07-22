@@ -23,6 +23,13 @@ from q_haderslev_vbo.automation_server.ats_update_item_data import (
     update_item_data
 )
 
+
+from q_haderslev_vbo.automation_server.ats_is_item_in_queue import (
+    is_item_in_queue,
+)
+
+
+
 # ------------------------------------------------------------
 # 🌐 PLAYWRIGHT (KAN SLETTES I PROCESSER UDEN BROWSER)
 # ------------------------------------------------------------
@@ -68,12 +75,32 @@ async def populate_queue(workqueue: Workqueue, debug: bool):
             update=False
         )
 
+
+        item_reference = data_json["box"]["cpr"]
+
+        # Kontrollér om item allerede venter eller behandles.
+        if is_item_in_queue(
+            queue_id= #INDSÆT ID på QUEUE - men skal gerne laves fra .env eller automation server ved ved ikke hvordan endnu.
+            item_reference=item_reference,
+            new=True,
+            in_progress=True,
+        ):
+            print(
+                f"Springer over: Item med reference "
+                f"'{item_reference}' findes allerede i køen."
+            )
+            continue
+
         workqueue.add_item(
             data=data_json,
-            reference=data_json["box"]["cpr"]
+            reference=item_reference,
         )
 
-    logger.info(f"{len(raw_items)} items tilføjet til workqueue")
+        print(
+            f"Item med reference '{item_reference}' "
+            "er tilføjet til køen."
+        )
+
 
 
 
