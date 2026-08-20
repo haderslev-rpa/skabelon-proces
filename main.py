@@ -29,6 +29,46 @@ from q_haderslev_vbo.automation_server.ats_is_item_in_queue import (
 )
 
 
+def _vaelg_items_til_behandling(workqueue: Workqueue):
+    """
+    Vælger items til behandling.
+
+    Output:
+    - Hvis DEBUG_ITEM_REFERENCE i .env mangler eller er tom:
+      Returneres selve workqueue til normal behandling.
+
+    - Hvis DEBUG_ITEM_REFERENCE har en værdi:
+      Returneres en liste med kun det første fundne NEW-item.
+      Itemet ændres til status "in progress".
+    """
+
+    item_reference = os.getenv(
+        "DEBUG_ITEM_REFERENCE",
+        "",
+    ).strip()
+
+    if not item_reference:
+        return workqueue
+
+    items = workqueue.get_item_by_reference(
+        reference=item_reference,
+        status=WorkItemStatus.NEW,
+    )
+
+    if not items:
+        raise RuntimeError(
+            f"Ingen NEW-items fundet med reference: {item_reference}"
+        )
+
+    item = items[0]
+
+    item.update_status(
+        WorkItemStatus.IN_PROGRESS.value,
+        "Startet via lokal debugkørsel",
+    )
+
+    return [item]
+
 
 # ------------------------------------------------------------
 # 🌐 PLAYWRIGHT (KAN SLETTES I PROCESSER UDEN BROWSER)
@@ -133,7 +173,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
 
     try: # denne try bruges kun til PLAYWRIGHT processer
         # Workqueue er iterable → hvert item behandles ét ad gangen
-        for item in workqueue:
+            for item in _vaelg_items_til_behandling(workqueue): #DEBUG_ITEM_REFERENCE=xxx i .env hvis man vil hente bestemte item.
 
             with item:
                 data = item.data
