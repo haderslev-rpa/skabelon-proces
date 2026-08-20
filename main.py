@@ -44,7 +44,8 @@ def get_headless_flag():  #Skriv HEADLESS=false i .env for at se browseren under
 # ------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    force=True,
 )
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
