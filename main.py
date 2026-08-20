@@ -180,7 +180,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
 
                 try:
                     print("==================================== NEXT ITEM ====================================")
-                    pprint(data)
+                    print(f"ITEM = ID: {item.id} - Reference: {item.reference}")
 
                     # --------------------------------------------------
                     # ▶ PROCESS-KODE
