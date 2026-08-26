@@ -173,7 +173,7 @@ async def process_workqueue(workqueue: Workqueue, debug: bool):
 
     try: # denne try bruges kun til PLAYWRIGHT processer
         # Workqueue er iterable → hvert item behandles ét ad gangen
-            for item in _vaelg_items_til_behandling(workqueue): #DEBUG_ITEM_REFERENCE=xxx i .env hvis man vil hente bestemte item.
+        for item in _vaelg_items_til_behandling(workqueue): #DEBUG_ITEM_REFERENCE=xxx i .env hvis man vil hente bestemte item.
 
             with item:
                 data = item.data
