@@ -3,6 +3,7 @@
 The repository has been tagged as a template repository. This means you can create a new repository based on this code using the [GitHub instructions](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
 
 
+
 ### Alternative method: checkout the repository and remove git bindings
 Replace `<new-folder-name>` with your desired folder name:
 ```sh
